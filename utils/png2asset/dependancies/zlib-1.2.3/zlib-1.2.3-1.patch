@@ -1,0 +1,819 @@
+diff -urN -x .build -x .inst -x .sinst zlib-1.2.3-orig/CYGWIN-PATCHES/shtool zlib-1.2.3/CYGWIN-PATCHES/shtool
+--- zlib-1.2.3-orig/CYGWIN-PATCHES/shtool	1969-12-31 19:00:00.000000000 -0500
++++ zlib-1.2.3/CYGWIN-PATCHES/shtool	2005-08-22 22:03:05.984375000 -0400
+@@ -0,0 +1,426 @@
++#!/bin/sh
++##
++##  GNU shtool -- The GNU Portable Shell Tool
++##  Copyright (c) 1994-2001 Ralf S. Engelschall <rse@engelschall.com>
++##
++##  See http://www.gnu.org/software/shtool/ for more information.
++##  See ftp://ftp.gnu.org/gnu/shtool/ for latest version.
++##
++##  Version:  1.5.4 (14-Jun-2001)
++##  Contents: 1/17 available modules
++##
++
++##
++##  This program is free software; you can redistribute it and/or modify
++##  it under the terms of the GNU General Public License as published by
++##  the Free Software Foundation; either version 2 of the License, or
++##  (at your option) any later version.
++##
++##  This program is distributed in the hope that it will be useful,
++##  but WITHOUT ANY WARRANTY; without even the implied warranty of
++##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++##  General Public License for more details.
++##
++##  You should have received a copy of the GNU General Public License
++##  along with this program; if not, write to the Free Software
++##  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++##  USA, or contact Ralf S. Engelschall <rse@engelschall.com>.
++##
++##  NOTICE: Given that you include this file verbatim into your own
++##  source tree, you are justified in saying that it remains separate
++##  from your package, and that this way you are simply just using GNU
++##  shtool. So, in this situation, there is no requirement that your
++##  package itself is licensed under the GNU General Public License in
++##  order to take advantage of GNU shtool.
++##
++
++##
++##  Usage: shtool [<options>] [<cmd-name> [<cmd-options>] [<cmd-args>]]
++##
++##  Available commands:
++##    mkshadow   Make a shadow tree through symbolic links
++##
++##  Not available commands (because module was not built-in):
++##    echo       Print string with optional construct expansion
++##    mdate      Pretty-print modification time of a file or dir
++##    table      Pretty-print a field-separated list as a table
++##    prop       Display progress with a running propeller
++##    move       Move files with simultaneous substitution
++##    install    Install a program, script or datafile
++##    mkdir      Make one or more directories
++##    mkln       Make link with calculation of relative paths
++##    fixperm    Fix file permissions inside a source tree
++##    tarball    Roll distribution tarballs
++##    guessos    Simple operating system guesser
++##    arx        Extended archive command
++##    slo        Separate linker options by library class
++##    scpp       Sharing C Pre-Processor
++##    version    Maintain a version information file
++##    path       Deal with program paths
++##
++
++if [ $# -eq 0 ]; then
++    echo "$0:Error: invalid command line" 1>&2
++    echo "$0:Hint:  run \`$0 -h' for usage" 1>&2
++    exit 1
++fi
++if [ ".$1" = ".-h" -o ".$1" = ".--help" ]; then
++    echo "This is GNU shtool, version 1.5.4 (14-Jun-2001)"
++    echo "Copyright (c) 1994-2001 Ralf S. Engelschall <rse@engelschall.com>"
++    echo "Report bugs to <bug-shtool@gnu.org>"
++    echo ''
++    echo "Usage: shtool [<options>] [<cmd-name> [<cmd-options>] [<cmd-args>]]"
++    echo ''
++    echo 'Available global <options>:'
++    echo '  -v, --version   display shtool version information'
++    echo '  -h, --help      display shtool usage help page (this one)'
++    echo '  -d, --debug     display shell trace information'
++    echo '  -r, --recreate  recreate this shtool script via shtoolize'
++    echo ''
++    echo 'Available <cmd-name> [<cmd-options>] [<cmd-args>]:'
++    echo '  mkshadow [-v] [-t] [-a] <src-dir> <dst-dir>'
++    echo ''
++    echo 'Not available <cmd-name> (because module was not built-in):'
++    echo '  echo     [-n] [-e] [<str> ...]'
++    echo '  mdate    [-n] [-z] [-s] [-d] [-f<str>] [-o<spec>] <path>'
++    echo '  table    [-F<sep>] [-w<width>] [-c<cols>] [-s<strip>] <str><sep><str>...'
++    echo '  prop     [-p<str>]'
++    echo '  move     [-v] [-t] [-e] [-p] <src-file> <dst-file>'
++    echo '  install  [-v] [-t] [-c] [-C] [-s] [-m<mode>] [-o<owner>] [-g<group>]'
++    echo '           [-e<sed-cmd>] <file> [<file> ...] <path>'
++    echo '  mkdir    [-t] [-f] [-p] [-m<mode>] <dir> [<dir> ...]'
++    echo '  mkln     [-t] [-f] [-s] <src-path> [<src-path> ...] <dst-path>'
++    echo '  fixperm  [-v] [-t] <path> [<path> ...]'
++    echo '  tarball  [-t] [-v] [-o<tarball>] [-c<prog>] [-d<dir>] [-u<user>]'
++    echo '           [-g<group>] [-e<pattern>] <path> [<path> ...]'
++    echo '  guessos  '
++    echo '  arx      [-t] [-C<cmd>] <op> <archive> [<file> ...]'
++    echo '  slo      [-p<str>] -- -L<dir> -l<lib> [-L<dir> -l<lib> ...]'
++    echo '  scpp     [-v] [-p] [-f<filter>] [-o<ofile>] [-t<tfile>] [-M<mark>]'
++    echo '           [-D<dname>] [-C<cname>] <file> [<file> ...]'
++    echo '  version  [-l<lang>] [-n<name>] [-p<prefix>] [-s<version>] [-e]'
++    echo '           [-i<knob>] [-d<type>] <file>'
++    echo '  path     [-s] [-r] [-d] [-b] [-m] [-p<path>] <str> [<str> ...]'
++    echo ''
++    exit 0
++fi
++if [ ".$1" = ".-v" -o ".$1" = ."--version" ]; then
++    echo "GNU shtool 1.5.4 (14-Jun-2001)"
++    exit 0
++fi
++if [ ".$1" = ".-r" -o ".$1" = ."--recreate" ]; then
++    shtoolize -oshtool mkshadow
++    exit 0
++fi
++if [ ".$1" = ".-d" -o ".$1" = ."--debug" ]; then
++    shift
++    set -x
++fi
++name=`echo "$0" | sed -e 's;.*/\([^/]*\)$;\1;' -e 's;-sh$;;' -e 's;\.sh$;;'`
++case "$name" in
++    mkshadow )
++        #   implicit tool command selection
++        tool="$name"
++        ;;
++    * )
++        #   explicit tool command selection
++        tool="$1"
++        shift
++        ;;
++esac
++arg_spec=""
++opt_spec=""
++gen_tmpfile=no
++
++##
++##  DISPATCH INTO SCRIPT PROLOG
++##
++
++case $tool in
++    mkshadow )
++        str_tool="mkshadow"
++        str_usage="[-v] [-t] [-a] <src-dir> <dst-dir>"
++        arg_spec="2="
++        opt_spec="v.t.a."
++        opt_v=no
++        opt_t=no
++        opt_a=no
++        ;;
++    -* )
++        echo "$0:Error: unknown option \`$tool'" 2>&1
++        echo "$0:Hint:  run \`$0 -h' for usage" 2>&1
++        exit 1
++        ;;
++    * )
++        echo "$0:Error: unknown command \`$tool'" 2>&1
++        echo "$0:Hint:  run \`$0 -h' for usage" 2>&1
++        exit 1
++        ;;
++esac
++
++##
++##  COMMON UTILITY CODE
++##
++
++#   determine name of tool
++if [ ".$tool" != . ]; then
++    #   used inside shtool script
++    toolcmd="$0 $tool"
++    toolcmdhelp="shtool $tool"
++    msgprefix="shtool:$tool"
++else
++    #   used as standalone script
++    toolcmd="$0"
++    toolcmdhelp="sh $0"
++    msgprefix="$str_tool"
++fi
++
++#   parse argument specification string
++eval `echo $arg_spec |\
++      sed -e 's/^\([0-9]*\)\([+=]\)/arg_NUMS=\1; arg_MODE=\2/'`
++
++#   parse option specification string
++eval `echo h.$opt_spec |\
++      sed -e 's/\([a-zA-Z0-9]\)\([.:+]\)/opt_MODE_\1=\2;/g'`
++
++#   interate over argument line
++opt_PREV=''
++while [ $# -gt 0 ]; do
++    #   special option stops processing
++    if [ ".$1" = ".--" ]; then
++        shift
++        break
++    fi
++
++    #   determine option and argument
++    opt_ARG_OK=no
++    if [ ".$opt_PREV" != . ]; then
++        #   merge previous seen option with argument
++        opt_OPT="$opt_PREV"
++        opt_ARG="$1"
++        opt_ARG_OK=yes
++        opt_PREV=''
++    else
++        #   split argument into option and argument
++        case "$1" in
++            -[a-zA-Z0-9]*)
++                eval `echo "x$1" |\
++                      sed -e 's/^x-\([a-zA-Z0-9]\)/opt_OPT="\1";/' \
++                          -e 's/";\(.*\)$/"; opt_ARG="\1"/'`
++                ;;
++            -[a-zA-Z0-9])
++                opt_OPT=`echo "x$1" | cut -c3-`
++                opt_ARG=''
++                ;;
++            *)
++                break
++                ;;
++        esac
++    fi
++
++    #   eat up option
++    shift
++
++    #   determine whether option needs an argument
++    eval "opt_MODE=\$opt_MODE_${opt_OPT}"
++    if [ ".$opt_ARG" = . -a ".$opt_ARG_OK" != .yes ]; then
++        if [ ".$opt_MODE" = ".:" -o ".$opt_MODE" = ".+" ]; then
++            opt_PREV="$opt_OPT"
++            continue
++        fi
++    fi
++
++    #   process option
++    case $opt_MODE in
++        '.' )
++            #   boolean option
++            eval "opt_${opt_OPT}=yes"
++            ;;
++        ':' )
++            #   option with argument (multiple occurances override)
++            eval "opt_${opt_OPT}=\"\$opt_ARG\""
++            ;;
++        '+' )
++            #   option with argument (multiple occurances append)
++            eval "opt_${opt_OPT}=\"\$opt_${opt_OPT} \$opt_ARG\""
++            ;;
++        * )
++            echo "$msgprefix:Error: unknown option: \`-$opt_OPT'" 1>&2
++            echo "$msgprefix:Hint:  run \`$toolcmdhelp -h' or \`man shtool' for details" 1>&2
++            exit 1
++            ;;
++    esac
++done
++if [ ".$opt_PREV" != . ]; then
++    echo "$msgprefix:Error: missing argument to option \`-$opt_PREV'" 1>&2
++    echo "$msgprefix:Hint:  run \`$toolcmdhelp -h' or \`man shtool' for details" 1>&2
++    exit 1
++fi
++
++#   process help option
++if [ ".$opt_h" = .yes ]; then
++    echo "Usage: $toolcmdhelp $str_usage"
++    exit 0
++fi
++
++#   complain about incorrect number of arguments
++case $arg_MODE in
++    '=' )
++        if [ $# -ne $arg_NUMS ]; then
++            echo "$msgprefix:Error: invalid number of arguments (exactly $arg_NUMS expected)" 1>&2
++            echo "$msgprefix:Hint:  run \`$toolcmd -h' or \`man shtool' for details" 1>&2
++            exit 1
++        fi
++        ;;
++    '+' )
++        if [ $# -lt $arg_NUMS ]; then
++            echo "$msgprefix:Error: invalid number of arguments (at least $arg_NUMS expected)" 1>&2
++            echo "$msgprefix:Hint:  run \`$toolcmd -h' or \`man shtool' for details" 1>&2
++            exit 1
++        fi
++        ;;
++esac
++
++#   establish a temporary file on request
++if [ ".$gen_tmpfile" = .yes ]; then
++    if [ ".$TMPDIR" != . ]; then
++        tmpdir="$TMPDIR"
++    elif [ ".$TEMPDIR" != . ]; then
++        tmpdir="$TEMPDIR"
++    else
++        tmpdir="/tmp"
++    fi
++    tmpfile="$tmpdir/.shtool.$$"
++    rm -f $tmpfile >/dev/null 2>&1
++    touch $tmpfile
++    chmod 600 $tmpfile
++fi
++
++##
++##  DISPATCH INTO SCRIPT BODY
++##
++
++case $tool in
++
++mkshadow )
++    ##
++    ##  mkshadow -- Make a shadow tree through symbolic links
++    ##  Copyright (c) 1998-2001 Ralf S. Engelschall <rse@engelschall.com>
++    ##  Originally written for Apache
++    ##
++    
++    #   source and destination directory
++    src=`echo "$1" | sed -e 's:/$::' -e 's:^\./\(.\):\1:'`
++    dst=`echo "$2" | sed -e 's:/$::' -e 's:^\./\(.\):\1:'`
++    
++    #   check whether source exists
++    if [ ! -d $src ]; then
++        echo "$msgprefix:Error: source directory not found: \`$src'" 1>&2
++        exit 1
++    fi
++    
++    #   determine if one of the paths is an absolute path,
++    #   because then we have to use an absolute symlink
++    oneisabs=0
++    case $src in
++        /* ) oneisabs=1 ;;
++    esac
++    case $dst in
++        /* ) oneisabs=1 ;;
++    esac
++    
++    #   determine reverse directory for destination directory
++    dstrevdir=''
++    if [ $oneisabs = 0 ]; then
++        #   derive reverse path from forward path
++        pwd=`pwd`
++        OIFS="$IFS"; IFS='/'
++        for pe in $dst; do
++            if [ "x$pe" = "x.." ]; then
++                OIFS2="$IFS"; IFS="$DIFS"
++                eval `echo "$pwd" |\
++                      sed -e 's:\([^/]*\)$:; dir="\1":' \
++                          -e 's:^\(.*\)/[^/]*;:pwd="\1";:'\
++                          -e 's:^;:pwd="";:'`
++                dstrevdir="$dir/$dstrevdir"
++                IFS="$OIFS2"
++            else
++                dstrevdir="../$dstrevdir"
++            fi
++        done
++        IFS="$OIFS"
++    else
++        src="`cd $src; pwd`";
++    fi
++    
++    #   create directory tree at destination
++    if [ ! -d $dst ]; then
++        if [ ".$opt_t" = .yes ]; then
++            echo "mkdir $dst" 1>&2
++        fi
++        mkdir $dst
++    fi
++    if [ ".$opt_a" = .yes ]; then
++        DIRS=`cd $src; find . -type d -print |\
++              sed -e '/^\.$/d' -e 's:^\./::'`
++    else
++        DIRS=`cd $src; find . -type d -print |\
++              sed -e '/\/CVS/d' -e '/^\.$/d' -e 's:^\./::'`
++    fi
++    for dir in $DIRS; do
++        if [ ".$opt_t" = .yes ]; then
++            echo "mkdir $dst/$dir" 1>&2
++        fi
++        mkdir $dst/$dir
++    done
++    
++    #   fill directory tree with symlinks to files
++    if [ ".$opt_a" = .yes ]; then
++        FILES="`cd $src; find . -depth -print |\
++                sed -e 's/^\.\///'`"
++    else
++        FILES="`cd $src; find . -depth -print |\
++                sed -e '/\.o$/d' -e '/\.a$/d' -e '/\.so$/d' \
++                    -e '/\.cvsignore$/d' -e '/\/CVS/d' \
++                    -e '/\/\.#/d' -e '/\.orig$/d' \
++                    -e 's/^\.\///'`"
++    fi
++    for file in $FILES; do
++         #  don't use `-type f' above for find because of symlinks
++         if [ -d "$src/$file" ]; then
++             continue
++         fi
++         basename=`echo $file | sed -e 's:^.*/::'`
++         dir=`echo $file | sed -e 's:[^/]*$::' -e 's:/$::' -e 's:$:/:' -e 's:^/$::'`
++         from=`echo "$src/$file" | sed -e 's/^\.\///'`
++         to="$dst/$dir$basename"
++         if [ $oneisabs = 0 ]; then
++             if [ ".$dir" != . ]; then
++                 subdir=`echo $dir | sed -e 's:/$::'`
++                 #   derive reverse path from forward path
++                 revdir=''
++                 OIFS="$IFS"; IFS='/'
++                 for pe in $subdir; do
++                     revdir="../$revdir"
++                 done
++                 IFS="$OIFS"
++                 #   finalize from
++                 from="$revdir$from"
++             fi
++             from="$dstrevdir$from"
++         fi
++         if [ ".$opt_v" = .yes ]; then
++             echo "    $to" 1>&2
++         fi
++         if [ ".$opt_t" = .yes ]; then
++             echo "ln -s $from $to" 1>&2
++         fi
++         ln -s $from $to
++    done
++    ;;
++
++esac
++
++exit 0
++
++##EOF##
+diff -urN -x .build -x .inst -x .sinst zlib-1.2.3-orig/CYGWIN-PATCHES/zlib.README zlib-1.2.3/CYGWIN-PATCHES/zlib.README
+--- zlib-1.2.3-orig/CYGWIN-PATCHES/zlib.README	1969-12-31 19:00:00.000000000 -0500
++++ zlib-1.2.3/CYGWIN-PATCHES/zlib.README	2005-08-22 22:03:06.031250000 -0400
+@@ -0,0 +1,125 @@
++zlib
++------------------------------------------
++The zlib compression library provides in-memory 
++compression and decompression functions, including 
++integrity checks of the uncompressed data.
++
++Runtime requirements:
++  cygwin-1.5.18 or newer
++
++Build requirements:
++  cygwin-1.5.18 or newer
++  gcc-3.4.4-1 or newer
++  binutils-20050608-2 or newer
++
++Canonical homepage:
++  http://www.zlib.net/
++
++Canonical download:
++  http://www.zlib.net/zlib-1.2.2.tar.gz
++  
++------------------------------------
++
++Build instructions:
++  unpack zlib-1.2.2-X-src.tar.bz2
++    if you use setup to install this src package, it will be
++	 unpacked under /usr/src automatically
++  cd /usr/src
++  ./zlib-1.2.2-X.sh all
++
++This will create:
++  /usr/src/zlib-1.2.2-X.tar.bz2
++  /usr/src/zlib-1.2.2-X-src.tar.bz2
++
++-------------------------------------------
++
++To link this library with your projects:
++  #1) include zlib.h and zconf.h
++  #2) to link with the static library, use '-static' on the link line 
++  #3) to link with the dll, no unusual link-time flags are needed.
++In either case, there are NO special compile time flags needed
++
++See the makefile and inspect how minigzip.exe, example.exe (dll) and 
++minigzip-stat.exe, example-stat.exe (static) are compiled and linked.
++
++-------------------------------------------
++Files included in the binary distro
++
++  /usr/bin/cygz.dll
++  /usr/lib/libz.a
++  /usr/lib/libz.dll.a
++  /usr/include/zlib.h
++  /usr/include/zconf.h
++  /usr/share/man/man3/zlib.3
++  /usr/share/doc/Cygwin/zlib-1.2.2.README (this file)
++  /usr/share/doc/zlib-1.2.2/README (the normal zlib README)
++  /usr/share/doc/zlib-1.2.1/FAQ    (the normal zlib FAQ)
++
++------------------
++
++Port Notes:
++1.2.2-2: bug fix release
++  * fixes security issue can-2005-2096
++
++1.2.2-1: Routine upgrade
++  * includes security fix below
++
++1.2.1-2: Security fix
++  http://lwn.net/Articles/99288/
++
++1.2.1-1: Bump to official release
++
++1.2.0.7-2: Incorporate comments from Cosmin Truta
++
++1.2.0.7-1: update to 1.2.0.7 beta release.  Compiled against 
++           cygwin-1.5.5
++
++1.2.0.3-1: update to 1.2.0.3 beta release.  Compiled against 
++           cygwin-1.5.1
++
++1.2.0.1-1: update to 1.2.0.1 beta release.  Compiled against
++           cygwin-1.5.0
++
++1.1.4-1: update to 1.1.4 release.  1.1.4 fixes a double-free
++  error that could cause heap corruption.
++
++1.1.3-7: no more need for -DZLIB_STATIC/-DALL_STATIC; now use
++  auto-import functionality.
++
++1.1.3-6: Added -DALL_STATIC synonym for -DZLIB_STATIC
++
++As of 1.1.3-5, the dll is named "cygz.dll" NOT "libz.dll".  This 
++  helps to avoid dll naming conflicts between cygwin dll's and 
++  dlls from other platforms (native, pw, etc).  If you have an
++  executable that depends on "libz.dll" you may either recompile 
++  your app so that it links with libz.dll.a/cygz.dll, or install
++  *just* the dll from zlib-1.1.3-4.tar.gz into your /usr/bin 
++  directory.
++
++The dll is NOT versioned. (i.e. "cygz.dll" NOT "cygz1.dll") because
++  the libz package and interface is quite stable, and its interface
++  is not anticipated to change in the foreseeable future.
++
++OS_TYPE is unix (0x03) not Win9x/NT (0x0b)
++
++All #ifdef (WIN32) statements are guarded with '&& !(__CYGWIN__)' or 
++  expanded with '|| (__CYGWIN__)' as appropriate. So, the cygwin 
++  version should work whether 'WIN32' is defined or not (e.g.
++  whether '-mwin32' is used or not)
++
++Binary package does NOT include the 586 or 686 optimized assembler
++  code. See Makefile.in for instructions on how to enable 
++  assembler optimizations.
++
++Most of the patches in zlib-1.1.3-X.patch have been submitted to 
++  zlib. Since Jean-loup Gailly seems to be MIA, the other maintainer
++  of zlib, Greg Roelofs, has placed a cygwin patch in the 'contrib'
++  directory of the ftp site: 
++    ftp://ftp.info-zip.org/pub/infozip/zlib/contrib
++  The patch in that contrib directory contains most of the important
++  parts of this patch. However, until an official zlib-1.1.4 is
++  released with those changes included, cygwin-zlib will be 
++  distributed with a patch against a 'clean' zlib-1.1.3 and thus 
++  will duplicate the changes in the patches Greg has accepted.
++
++Cygwin port maintained by: Charles Wilson cwilson@ece.gatech.edu
+diff -urN -x .build -x .inst -x .sinst zlib-1.2.3-orig/CYGWIN-PATCHES/zlib.hint zlib-1.2.3/CYGWIN-PATCHES/zlib.hint
+--- zlib-1.2.3-orig/CYGWIN-PATCHES/zlib.hint	1969-12-31 19:00:00.000000000 -0500
++++ zlib-1.2.3/CYGWIN-PATCHES/zlib.hint	2005-08-22 22:03:06.046875000 -0400
+@@ -0,0 +1,9 @@
++category Base Libs
++requires cygwin
++sdesc "The zlib compression and decompression library"
++ldesc "The zlib compression library provides in-memory compression and
++decompression functions, including integrity checks of the uncompressed
++data.  This version of the library supports only one compression method
++(deflation), but other algorithms may be added later, which will have
++the same stream interface.  The zlib library is used by many different
++system programs."
+diff -urN -x .build -x .inst -x .sinst zlib-1.2.3-orig/Makefile.in zlib-1.2.3/Makefile.in
+--- zlib-1.2.3-orig/Makefile.in	2005-07-17 22:25:21.000000000 -0400
++++ zlib-1.2.3/Makefile.in	2005-08-22 22:03:06.062500000 -0400
+@@ -28,10 +28,14 @@
+ LDSHARED=$(CC)
+ CPP=$(CC) -E
+ 
+-LIBS=libz.a
++STATICLIB=libz.a
+ SHAREDLIB=libz.so
+ SHAREDLIBV=libz.so.1.2.3
+ SHAREDLIBM=libz.so.1
++IMPORTLIB=
++SHAREDLIBPOST='(rm -f $(SHAREDLIB) $(SHAREDLIBM); ln -s $@ $(SHAREDLIB) ; ln -s $@ $(SHAREDLIBM) )'
++SHAREDTARGET=$(SHAREDLIBV)
++LIBS=$(STATICLIB)
+ 
+ AR=ar rc
+ RANLIB=ranlib
+@@ -42,6 +46,7 @@
+ prefix = /usr/local
+ exec_prefix = ${prefix}
+ libdir = ${exec_prefix}/lib
++bindir = ${exec_prefix}/bin
+ includedir = ${prefix}/include
+ mandir = ${prefix}/share/man
+ man3dir = ${mandir}/man3
+@@ -67,7 +72,7 @@
+ 	  echo '		*** zlib test FAILED ***'; \
+ 	fi
+ 
+-libz.a: $(OBJS) $(OBJA)
++$(STATICLIB): $(OBJS) $(OBJA)
+ 	$(AR) $@ $(OBJS) $(OBJA)
+ 	-@ ($(RANLIB) $@ || true) >/dev/null 2>&1
+ 
+@@ -77,11 +82,9 @@
+ 	mv _match.o match.o
+ 	rm -f _match.s
+ 
+-$(SHAREDLIBV): $(OBJS)
++$(SHAREDTARGET): $(OBJS)
+ 	$(LDSHARED) -o $@ $(OBJS)
+-	rm -f $(SHAREDLIB) $(SHAREDLIBM)
+-	ln -s $@ $(SHAREDLIB)
+-	ln -s $@ $(SHAREDLIBM)
++	$(SHAREDLIBPOST)
+ 
+ example$(EXE): example.o $(LIBS)
+ 	$(CC) $(CFLAGS) -o $@ example.o $(LDFLAGS)
+@@ -90,37 +93,58 @@
+ 	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
+ 
+ install: $(LIBS)
+-	-@if [ ! -d $(exec_prefix) ]; then mkdir -p $(exec_prefix); fi
+-	-@if [ ! -d $(includedir)  ]; then mkdir -p $(includedir); fi
+-	-@if [ ! -d $(libdir)      ]; then mkdir -p $(libdir); fi
+-	-@if [ ! -d $(man3dir)     ]; then mkdir -p $(man3dir); fi
+-	cp zlib.h zconf.h $(includedir)
+-	chmod 644 $(includedir)/zlib.h $(includedir)/zconf.h
+-	cp $(LIBS) $(libdir)
+-	cd $(libdir); chmod 755 $(LIBS)
+-	-@(cd $(libdir); $(RANLIB) libz.a || true) >/dev/null 2>&1
+-	cd $(libdir); if test -f $(SHAREDLIBV); then \
+-	  rm -f $(SHAREDLIB) $(SHAREDLIBM); \
+-	  ln -s $(SHAREDLIBV) $(SHAREDLIB); \
+-	  ln -s $(SHAREDLIBV) $(SHAREDLIBM); \
+-	  (ldconfig || true)  >/dev/null 2>&1; \
+-	fi
+-	cp zlib.3 $(man3dir)
+-	chmod 644 $(man3dir)/zlib.3
++	-@if [ ! -d $(DESTDIR)$(exec_prefix) ]; then mkdir -p $(DESTDIR)$(exec_prefix); fi
++	-@if [ ! -d $(DESTDIR)$(includedir)  ]; then mkdir -p $(DESTDIR)$(includedir); fi
++	-@if [ ! -d $(DESTDIR)$(libdir)      ]; then mkdir -p $(DESTDIR)$(libdir); fi
++	-@if [ ! -d $(DESTDIR)$(bindir)      ]; then mkdir -p $(DESTDIR)$(bindir); fi
++	-@if [ ! -d $(DESTDIR)$(man3dir)     ]; then mkdir -p $(DESTDIR)$(man3dir); fi
++	cp zlib.h zconf.h $(DESTDIR)$(includedir)
++	chmod 644 $(DESTDIR)$(includedir)/zlib.h $(DESTDIR)$(includedir)/zconf.h
++	cp zlib.3 $(DESTDIR)$(man3dir)
++	chmod 644 $(DESTDIR)$(man3dir)/zlib.3
++# Install static lib (and import lib, if set) into libdir
+ # The ranlib in install is needed on NeXTSTEP which checks file times
++	-cp $(STATICLIB) $(IMPORTLIB) $(DESTDIR)$(libdir)
++	-@(cd $(DESTDIR)$(libdir); \
++	$(RANLIB) libz.a || true; \
++	chmod 755 $(STATICLIB) $(IMPORTLIB)) >/dev/null 2>&1
++# Install shared lib -- if IMPORTLIB is set, then sharedlib goes into bindir
+ # ldconfig is for Linux
++	if test -z "$(IMPORTLIB)" ; then \
++	  if test -n "$(SHAREDTARGET)" ; then \
++	    if test -f "$(SHAREDTARGET)" ; then \
++	      cp $(SHAREDTARGET) $(DESTDIR)$(libdir); \
++	    fi; \
++	  fi; \
++	  cd $(DESTDIR)$(libdir); \
++	  if test -n "$(SHAREDLIBV)" ; then \
++	    if test -f "$(SHAREDLIBV)" ; then \
++	      rm -f $(SHAREDLIB) $(SHAREDLIBM); \
++	      ln -s $(SHAREDLIBV) $(SHAREDLIB); \
++	      ln -s $(SHAREDLIBV) $(SHAREDLIBM); \
++	      (ldconfig || true) >/dev/null 2>&1; \
++	    fi; \
++	  fi; \
++	else \
++	  cp $(SHAREDTARGET) $(DESTDIR)$(bindir); \
++	  (cd $(DESTDIR)$(bindir); chmod 755 $(SHAREDTARGET)); \
++	fi
+ 
+ uninstall:
+-	cd $(includedir); \
+-	cd $(libdir); rm -f libz.a; \
+-	if test -f $(SHAREDLIBV); then \
+-	  rm -f $(SHAREDLIBV) $(SHAREDLIB) $(SHAREDLIBM); \
++	cd $(DESTDIR)$(includedir); \
++	cd $(DESTDIR)$(libdir); rm -f $(STATICLIB) $(IMPORTLIB); \
++	if test -f "$(SHAREDLIBV)"; then \
++	  if test -f "$(SHAREDLIBV)"; then \
++	    rm -f $(SHAREDLIBV) $(SHAREDLIB) $(SHAREDLIBM); \
++	  fi \
+ 	fi
+-	cd $(man3dir); rm -f zlib.3
++	cd $(DESTDIR)$(man3dir); rm -f zlib.3
++	cd $(DESTDIR)$(bindir); (rm -f $(SHAREDLIB) || true) > /dev/null 2>&1
+ 
+ mostlyclean: clean
+ clean:
+ 	rm -f *.o *~ example$(EXE) minigzip$(EXE) \
++	   $(STATICLIB) $(IMPORTLIB) $(SHAREDLIBV) $(SHAREDLIBV) $(SHAREDLIBM) \
+ 	   libz.* foo.gz so_locations \
+ 	   _match.s maketree contrib/infback9/*.o
+ 
+diff -urN -x .build -x .inst -x .sinst zlib-1.2.3-orig/configure zlib-1.2.3/configure
+--- zlib-1.2.3-orig/configure	2005-07-11 16:11:57.000000000 -0400
++++ zlib-1.2.3/configure	2005-08-22 22:03:06.125000000 -0400
+@@ -18,8 +18,9 @@
+ # If you have problems, try without defining CC and CFLAGS before reporting
+ # an error.
+ 
+-LIBS=libz.a
+-LDFLAGS="-L. ${LIBS}"
++STATICLIB=libz.a
++old_ldflags="$LDFLAGS"
++LDFLAGS="-L. ${STATICLIB}"
+ VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
+ VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
+ VER1=`sed -n -e '/VERSION "/s/.*"\([0-9]*\)\\..*/\1/p' < zlib.h`
+@@ -28,6 +29,7 @@
+ prefix=${prefix-/usr/local}
+ exec_prefix=${exec_prefix-'${prefix}'}
+ libdir=${libdir-'${exec_prefix}/lib'}
++bindir=${bindir-'${exec_prefix}/bin'}
+ includedir=${includedir-'${prefix}/include'}
+ mandir=${mandir-'${prefix}/share/man'}
+ shared_ext='.so'
+@@ -71,13 +73,32 @@
+   *gcc*) gcc=1;;
+ esac
+ 
++BUILDPLATFORM=`(uname -s || echo unknown) 2>/dev/null`;
++TARGETPLATFORM=${target-${BUILDPLATFORM}}
++
+ if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
+   CC="$cc"
+   SFLAGS=${CFLAGS-"-fPIC -O3"}
+   CFLAGS="$cflags"
+-  case `(uname -s || echo unknown) 2>/dev/null` in
++  case ${TARGETPLATFORM} in
+   Linux | linux | GNU | GNU/*) LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1"};;
+-  CYGWIN* | Cygwin* | cygwin* | OS/2* )
++  OS/2* )
++             EXE='.exe';;
++  *CYGWIN* | *Cygwin* | *cygwin* )
++             SFLAGS=${CFLAGS}
++             LDFLAGS="-L. -lz ${old_ldflags}"
++             shared_ext='.dll'
++             SHAREDLIB='cygz.dll'
++             IMPORTLIB='libz.dll.a'
++             LDSHARED=${LDSHARED-"${CC} -shared -Wl,-export-all -Wl,--out-implib=${IMPORTLIB}"}
++             EXE='.exe';;
++  *MINGW* | *Mingw* | *mingw* ) 
++             SFLAGS=${CFLAGS}
++             LDFLAGS="-L. -lz ${old_ldflags}"
++             shared_ext='.dll'
++             SHAREDLIB='mgwz.dll'
++             IMPORTLIB='libz.dll.a'
++             LDSHARED=${LDSHARED-"${CC} -shared -Wl,-export-all -Wl,--out-implib=${IMPORTLIB}"}
+              EXE='.exe';;
+   QNX*)  # This is for QNX6. I suppose that the QNX rule below is for QNX2,QNX4
+          # (alain.bonnefoy@icbt.com)
+@@ -163,6 +184,20 @@
+              LDSHARED=${LDSHARED-"cc -shared"};;
+   esac
+ fi
++case ${TARGETPLATFORM} in
++  *CYGWIN* | *Cygwin* | *cygwin* )
++    # On cygwin, we always build both shared and static libs
++    LIBS="${SHAREDLIB} ${STATICLIB}"
++    SHAREDLIBPOST='/bin/true'
++    SHAREDTARGET=${SHAREDLIB}
++    ;;
++  *MINGW* | *Mingw* | *mingw* ) 
++    # On Mingw-cygwin-special, we always build both shared and static libs
++    LIBS="${SHAREDLIB} ${STATICLIB}"
++    SHAREDLIBPOST='/bin/true'
++    SHAREDTARGET=${SHAREDLIB}
++    ;;
++  *)
+ 
+ SHAREDLIB=${SHAREDLIB-"libz$shared_ext"}
+ SHAREDLIBV=${SHAREDLIBV-"libz$shared_ext.$VER"}
+@@ -186,10 +221,14 @@
+ fi
+ if test $shared -eq 0; then
+   LDSHARED="$CC"
+-  echo Building static library $LIBS version $VER with $CC.
++  LIBS="$STATICLIB"
++  LDFLAGS="-L. ${STATICLIB}"
++  echo Building static library $STATICLIB version $VER with $CC.
+ else
+   LDFLAGS="-L. ${SHAREDLIBV}"
+ fi
++  ;;
++esac
+ 
+ cat > $test.c <<EOF
+ #include <unistd.h>
+@@ -444,15 +483,20 @@
+ /^CPP *=/s#=.*#=$CPP#
+ /^LDSHARED *=/s#=.*#=$LDSHARED#
+ /^LIBS *=/s#=.*#=$LIBS#
++/^STATICLIB *=/s#=.*#=$STATICLIB#
+ /^SHAREDLIB *=/s#=.*#=$SHAREDLIB#
+ /^SHAREDLIBV *=/s#=.*#=$SHAREDLIBV#
+ /^SHAREDLIBM *=/s#=.*#=$SHAREDLIBM#
++/^IMPORTLIB *=/s#=.*#=$IMPORTLIB#
++/^SHAREDLIBPOST *=/s#=.*#=$SHAREDLIBPOST#
++/^SHAREDTARGET *=/s#=.*#=$SHAREDTARGET#
+ /^AR *=/s#=.*#=$AR#
+ /^RANLIB *=/s#=.*#=$RANLIB#
+ /^EXE *=/s#=.*#=$EXE#
+ /^prefix *=/s#=.*#=$prefix#
+ /^exec_prefix *=/s#=.*#=$exec_prefix#
+ /^libdir *=/s#=.*#=$libdir#
++/^bindir *=/s#=.*#=$bindir#
+ /^includedir *=/s#=.*#=$includedir#
+ /^mandir *=/s#=.*#=$mandir#
+ /^LDFLAGS *=/s#=.*#=$LDFLAGS#

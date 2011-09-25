@@ -1,0 +1,2 @@
+png2asset will convert your png images to raw and swizzle them for use with gu (bin format)
+png2asset will convert your obj models to vertices that can be read by gu (bin format)

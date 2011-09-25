@@ -1,0 +1,12 @@
+A lazy texture / model helper lib for GU including a few utils.
+
+png2asset.exe converts png images into raw swizzled textures for use with GU
+obj2asset.exe converts obj models into raw vertex lists for use with GU.
+(source code for utilities now included)
+
+Build instructions:
+	make && make install
+	
+Removal instructions:
+	make uninstall
+	
