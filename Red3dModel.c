@@ -174,7 +174,6 @@ Model *Red3dLoadModelBuf(void *buf, int numvertices, int vtype, int mempart)
 		else return NULL;
 }
 
-
 Model *Red3dGenModelCirc(int sides, float diameter)
 {
 	Model *model = (Model*) malloc(sizeof(Model));

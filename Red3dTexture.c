@@ -80,7 +80,7 @@ void Red3dTileTexture(Texture *tex)
 Texture *Red3dLoadTextureBuf(void *buf, int width, int height, int psm, int mode)
 {
 	Texture *tex_ptr = (Texture*) malloc(sizeof(Texture));
-	tex_ptr->data    = (void*) Red3dLoadBuffer(buf, (width*sizeof(unsigned int))*height, mode);
+	tex_ptr->data    = (void*) Red3dLoadBuf(buf, width*height*sizeof(unsigned int), mode);
 	tex_ptr->height  = height;
 	tex_ptr->width   = width;
 	tex_ptr->psm	 = psm;
@@ -96,3 +96,4 @@ Texture *Red3dLoadTexture(const char *file, int width, int height, int psm, int 
 	tex_ptr->psm	 = psm;
 	return tex_ptr;
 }
+

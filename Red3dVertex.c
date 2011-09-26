@@ -81,35 +81,35 @@ void *Red3dLoadVertexBuf(void *buf, int numvertices, int vtype, int mempart)
 	switch(vtype)
 	{
 		case VTYPE_TCNV: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexTCNV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexTCNV)*numvertices, mempart);
 		break;
 		
 		case VTYPE_CNV: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexCNV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexCNV)*numvertices, mempart);
 		break;
 		
 		case VTYPE_TCV: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexTCV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexTCV)*numvertices, mempart);
 		break;
 		
 		case VTYPE_CV: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexCV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexCV)*numvertices, mempart);
 		break;
 		
 		case VTYPE_TNV: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexTNV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexTNV)*numvertices, mempart);
 		break;
 		
 		case VTYPE_TV: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexTV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexTV)*numvertices, mempart);
 		break;
 		
 		case VTYPE_NV: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexNV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexNV)*numvertices, mempart);
 		break;
 		
 		case VTYPE_V: 
-			return (void*)Red3dLoadBuffer(buf, sizeof(VertexV)*numvertices, mempart);
+			return (void*)Red3dLoadBuf(buf, sizeof(VertexV)*numvertices, mempart);
 		break;
 	}
 	return NULL;

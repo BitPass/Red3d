@@ -73,15 +73,22 @@ int Red3dCheckFile(const char *path)
 	return -1;
 }
 
-//load file to vram
-
-void *Red3dLoadBuffer(void *buf, unsigned int size, int mempart)
+void *Red3dLoadBuf(void *buf, unsigned int size, int mempart)
 {
 	void *ptr;
-	if(mempart) ptr = vabsptr(valloc(size));
-	else     	ptr = malloc(size);
-	memcpy(ptr, buf, size);
-	return ptr;
+	
+	if(mempart)
+	{ 
+		ptr = vabsptr(valloc(size));
+		memcpy(ptr, buf, size);
+	}
+	else
+		ptr = buf;
+
+	DirIndex[DirIndexCounter] = Red3dInitFileInfo(buf, ptr, size);
+	
+	if(ptr) return ptr;
+	else return NULL;
 }
 
 void *Red3dLoadFile(const char *path, int mempart)
@@ -101,24 +108,15 @@ void *Red3dLoadFile(const char *path, int mempart)
 		readbuffer = malloc(size);
 		sceIoRead(fd, readbuffer, size);
 		
-		if(mempart)
-		{
-			ptr = vabsptr(valloc(size));
-			DirIndex[DirIndexCounter] = Red3dInitFileInfo(path, ptr, size);
-			memcpy(ptr, readbuffer, size);
-		}
-		else
-		{
-			ptr = malloc(size);
-			DirIndex[DirIndexCounter] = Red3dInitFileInfo(path, ptr, size);
-			memcpy(ptr, readbuffer, size);
-		}
+		ptr = Red3dLoadBuf(readbuffer, size, mempart);
 		
 		free(readbuffer);
 		sceKernelDcacheWritebackInvalidateAll();
 		sceIoClose(fd);
+		
 		return ptr;
 
 	}
 	return NULL;
 }
+

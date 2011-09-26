@@ -144,7 +144,7 @@ Texture* Red3dLoadTextureBuf(void *buf, int width, int height, int psm, int memp
 
 void* Red3dLoadFile(const char *file, int mempart);
 
-void* Red3dLoadBuffer(void *buf, unsigned int size, int mempart);
+void* Red3dLoadBuf(void *buf, unsigned int size, int mempart);
 
 int Red3dCollisionX(BoundBox box1, ScePspFVector3 pos1, BoundBox box2, ScePspFVector3 pos2);
 
